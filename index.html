@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Conditionals – Match the halves</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--tx:#1f2733;--mut:#667085;--ac:#2f6fdd;--chip:#e6eefc;--chipb:#9db9ee;--ok:#d7f3dd;--okb:#2e9e4f;--no:#fde0e0;--nob:#d34444;--slot:#fff8d6;--slotb:#c9a400;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a24;--card:#1f2733;--tx:#eef2f8;--mut:#a3adbd;--ac:#6ea0ff;--chip:#2b3b5c;--chipb:#5577b8;--ok:#1f4a2c;--okb:#52c27a;--no:#552626;--nob:#f07a7a;--slot:#3b3520;--slotb:#c9a400}}
+:root[data-theme="dark"]{--bg:#141a24;--card:#1f2733;--tx:#eef2f8;--mut:#a3adbd;--ac:#6ea0ff;--chip:#2b3b5c;--chipb:#5577b8;--ok:#1f4a2c;--okb:#52c27a;--no:#552626;--nob:#f07a7a;--slot:#3b3520;--slotb:#c9a400}
+body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.5 system-ui,sans-serif}
+main{max-width:780px;margin:0 auto;padding:20px 16px 48px}
+h1{color:var(--ac);font-size:1.8rem;margin:.2em 0}
+.hint{color:var(--mut);font-size:15px;margin:0 0 12px}
+#tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.tab{flex:0 0 auto;border:0;background:var(--card);color:var(--tx);padding:10px 14px;border-radius:10px 10px 0 0;font:600 15px system-ui,sans-serif;cursor:pointer;border-bottom:3px solid transparent}
+.tab[aria-selected=true]{border-bottom-color:var(--ac);color:var(--ac)}
+.tab .b{margin-left:6px;font-size:13px;color:var(--okb)}
+.panel{background:var(--card);border-radius:0 12px 12px 12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.panel[hidden]{display:none}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0}
+.q{flex:1 1 260px;font-weight:600}
+.slot{flex:1 1 260px;min-height:40px;display:flex;align-items:center;padding:3px 6px;border:2px dashed var(--slotb);background:var(--slot);border-radius:10px;box-sizing:border-box}
+.slot:empty::before{content:"drop here";color:var(--mut);font-size:14px}
+.slot.ok{border:2px solid var(--okb);background:var(--ok)}
+.slot.no{border:2px solid var(--nob);background:var(--no)}
+.bank{display:flex;flex-wrap:wrap;gap:8px;min-height:48px;margin-top:14px;padding:10px;border:1px dashed var(--chipb);border-radius:10px}
+.chip{display:inline-block;padding:4px 12px;background:var(--chip);border:1px solid var(--chipb);border-radius:16px;cursor:grab;font-size:15px;user-select:none;touch-action:manipulation}
+.slot .chip{border:0;background:transparent;padding:2px 4px}
+.chip.sel{outline:3px solid var(--ac)}
+button.act{font:600 15px system-ui,sans-serif;padding:8px 16px;border-radius:8px;border:0;background:var(--ac);color:var(--bg);cursor:pointer;margin:12px 8px 0 0}
+button.act.alt{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+.res{font-weight:700}
+.tab.lock{opacity:.55}
+.tab.new{animation:pulse 1s 3}
+@keyframes pulse{50%{background:var(--chip)}}
+#unlock{display:none;background:var(--ok);border:2px solid var(--okb);border-radius:10px;padding:10px 14px;margin:0 0 12px;font-weight:600}
+#unlock button{margin:6px 0 0 10px}
+.cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin:12px 0}
+.cat{display:flex;flex-direction:column;border:2px dashed var(--slotb);background:var(--slot);border-radius:12px;padding:8px;min-height:120px}
+.cat h3{margin:0 0 6px;font-size:15px;color:var(--ac)}
+.cat .zone{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.cat .chip{border-radius:10px}
+.chip.ok{background:var(--ok);border-color:var(--okb)}
+.chip.no{background:var(--no);border-color:var(--nob)}
+</style>
+</head>
+<body>
+<main>
+<h1>Conditionals: match the halves</h1>
+<p class="hint">Part 1: choose a topic tab and drag each ending next to the right beginning (or tap an ending, then tap a slot). Get all five sets right to unlock Part 2.</p>
+<div id="unlock">🎉 All five sets are correct! Part 2 is unlocked. <button class="act" id="goP2">Go to Part 2</button></div>
+<div id="tabs" role="tablist"></div>
+<div id="panels"></div>
+</main>
+<script>
+// each item: list of variants [beginning, ending]; one variant is picked at random each round
+const SETS=[
+{t:"😴 Sleep",items:[
+ [["If I don’t sleep well,","I feel tired all day."]],
+ [["If I go to bed early tonight,","I will feel better tomorrow."],["Unless I go to bed early tonight,","I won’t feel better tomorrow."]],
+ [["If I slept ten hours every night,","I would have lots of energy."]],
+ [["If I had gone to bed earlier last night,","I wouldn’t have been late for school."],["If I had gone to bed earlier last night,","I could have got up on time."]]]},
+{t:"💰 Money",items:[
+ [["If you spend all your money,","you have nothing left."]],
+ [["If I save enough money,","I will buy a new phone."],["Unless I save enough money,","I won’t buy a new phone."]],
+ [["If I won a lot of money,","I would travel around the world."]],
+ [["If I hadn’t spent all my money last week,","I would have bought those trainers."],["If I hadn’t spent all my money last week,","I could have bought those trainers."]]]},
+{t:"📚 Studying",items:[
+ [["If students study hard,","they usually pass their exams."]],
+ [["If I study tonight,","I will pass tomorrow’s test."],["Unless I study tonight,","I won’t pass tomorrow’s test."]],
+ [["If I studied every day,","I would get better marks."]],
+ [["If I hadn’t forgotten my book,","I would have done my homework."],["If I hadn’t forgotten my book,","I could have done my homework."]]]},
+{t:"🚌 The bus",items:[
+ [["If the bus is late,","I arrive late at school."]],
+ [["If I catch the bus,","I will be on time."],["Unless I catch the bus,","I won’t be on time."]],
+ [["If I lived near my school,","I would walk there every day."]],
+ [["If I had caught the earlier bus,","I wouldn’t have missed the first lesson."],["If I had caught the earlier bus,","I could have been in class on time."]]]},
+{t:"🎸 Free time",items:[
+ [["If my friends call me,","I go out with them."]],
+ [["If my friend calls me tonight,","I will go to the cinema."],["Unless my friend calls me tonight,","I won’t go to the cinema."]],
+ [["If I had more free time,","I would learn to play the guitar."]],
+ [["If I hadn’t lost my phone,","I would have called you."],["If I hadn’t lost my phone,","I could have called you."]]]}
+];
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const esc=s=>s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const tabs=document.getElementById('tabs'),panels=document.getElementById('panels');
+const N=SETS.length,CATS=["Zero conditional","First conditional","Second conditional","Third conditional"];
+let cur=0,sel=null,drag=null,rowsOf=[],solved=new Set(),p2=false;
+function mkSet(i){
+  const rows=shuf(SETS[i].items.map((it,k)=>{const v=pick(it);return{a:v[0],b:v[1],k}}));
+  rowsOf[i]=rows.slice().sort((x,y)=>x.k-y.k);
+  const p=document.createElement('div');p.className='panel';p.setAttribute('role','tabpanel');
+  p.innerHTML=rows.map(r=>'<div class="row"><div class="q">'+esc(r.a)+'</div><div class="slot" data-a="'+esc(r.b)+'"></div></div>').join('')+'<div class="bank"></div><button class="act chk">Check</button><button class="act alt rst">Start again</button> <span class="res"></span>';
+  const bank=p.querySelector('.bank');
+  shuf(rows.map(r=>r.b)).forEach(w=>{const c=document.createElement('span');c.className='chip';c.draggable=true;c.textContent=w;bank.appendChild(c)});
+  p.querySelector('.chk').onclick=()=>check(i);
+  p.querySelector('.rst').onclick=()=>{const np=mkSet(i);panels.replaceChild(np,panels.children[i]);tabs.children[i].querySelector('.b').textContent='';solved.delete(i);sel=null};
+  return p;
+}
+function mkP2(){
+  const p=document.createElement('div');p.className='panel';p.setAttribute('role','tabpanel');
+  p.innerHTML='<p class="hint">Part 2: drag all 20 sentences into the correct type of conditional.</p><div class="cats">'+CATS.map(n=>'<div class="cat"><h3>'+n+'</h3><div class="zone"></div></div>').join('')+'</div><div class="bank"></div><button class="act chk">Check</button><button class="act alt rst">Start again</button> <span class="res"></span>';
+  const bank=p.querySelector('.bank');
+  shuf(rowsOf.flatMap(rs=>rs.map(r=>({t:r.a+' '+r.b,k:r.k})))).forEach(o=>{const c=document.createElement('span');c.className='chip';c.draggable=true;c.textContent=o.t;c.dataset.k=o.k;bank.appendChild(c)});
+  p.querySelector('.chk').onclick=checkP2;
+  p.querySelector('.rst').onclick=()=>{const np=mkP2();panels.replaceChild(np,panels.children[N]);tabs.children[N].querySelector('.b').textContent='';sel=null};
+  return p;
+}
+function build(){
+  tabs.innerHTML='';panels.innerHTML='';sel=null;solved=new Set();p2=false;
+  document.getElementById('unlock').style.display='none';
+  SETS.forEach((s,i)=>{
+    const tb=document.createElement('button');tb.className='tab';tb.setAttribute('role','tab');tb.innerHTML=s.t+'<span class="b"></span>';
+    tb.onclick=()=>show(i);tabs.appendChild(tb);
+    panels.appendChild(mkSet(i));
+  });
+  const t2=document.createElement('button');t2.className='tab lock';t2.setAttribute('role','tab');t2.innerHTML='🔒 Part 2<span class="b"></span>';t2.onclick=()=>{if(p2)show(N)};tabs.appendChild(t2);
+  const lp=document.createElement('div');lp.className='panel';lp.innerHTML='<p class="hint">Locked. Get all five sets right to open Part 2.</p>';panels.appendChild(lp);
+  show(0);
+}
+function show(i){
+  cur=i;
+  [...tabs.children].forEach((t,k)=>t.setAttribute('aria-selected',k===i));
+  [...panels.children].forEach((p,k)=>p.hidden=k!==i);
+}
+function unlock(){
+  p2=true;
+  const t=tabs.children[N];t.classList.remove('lock');t.classList.add('new');t.innerHTML='🔓 Part 2<span class="b"></span>';
+  panels.replaceChild(mkP2(),panels.children[N]);panels.children[N].hidden=cur!==N;
+  document.getElementById('unlock').style.display='block';
+}
+document.getElementById('goP2').onclick=()=>show(N);
+function clear(p,i){p.querySelectorAll('.slot').forEach(s=>s.classList.remove('ok','no'));p.querySelector('.res').textContent='';tabs.children[i].querySelector('.b').textContent=''}
+function place(chip,t){
+  const p=chip.closest('.panel'),i=[...panels.children].indexOf(p);
+  if(t.classList.contains('cat'))t=t.querySelector('.zone');
+  if(t.classList.contains('slot')){const old=t.firstElementChild;if(old&&old!==chip)p.querySelector('.bank').appendChild(old)}
+  t.appendChild(chip);chip.classList.remove('sel');sel=null;
+  if(i<N)clear(p,i);else{p.querySelectorAll('.chip').forEach(c=>c.classList.remove('ok','no'));p.querySelector('.res').textContent='';tabs.children[N].querySelector('.b').textContent=''}
+}
+function check(i){
+  const p=panels.children[i];let ok=0;const ss=p.querySelectorAll('.slot');
+  ss.forEach(s=>{const c=s.firstElementChild,r=c&&c.textContent===s.dataset.a;s.classList.remove('ok','no');s.classList.add(r?'ok':'no');if(r)ok++});
+  const all=ok===ss.length;
+  p.querySelector('.res').textContent=ok+' / '+ss.length+(all?' 🎉':'');
+  tabs.children[i].querySelector('.b').textContent=all?'✓':ok+'/'+ss.length;
+  if(all){solved.add(i);if(solved.size===N&&!p2)unlock()}
+}
+function checkP2(){
+  const p=panels.children[N];let ok=0;
+  p.querySelectorAll('.cat').forEach((cat,k)=>cat.querySelectorAll('.chip').forEach(c=>{const r=+c.dataset.k===k;c.classList.remove('ok','no');c.classList.add(r?'ok':'no');if(r)ok++}));
+  const left=p.querySelectorAll('.bank .chip').length;
+  p.querySelector('.res').textContent=ok+' / 20'+(left?' · '+left+' still to sort':'')+(ok===20?' 🎉':'');
+  tabs.children[N].querySelector('.b').textContent=ok===20?'✓':ok+'/20';
+}
+const T='.slot,.bank,.cat';
+panels.addEventListener('dragstart',e=>{if(e.target.classList&&e.target.classList.contains('chip')){drag=e.target;try{e.dataTransfer.setData('text/plain','x')}catch(_){}}});
+panels.addEventListener('dragover',e=>{if(e.target.closest(T))e.preventDefault()});
+panels.addEventListener('drop',e=>{const t=e.target.closest(T);if(!t||!drag)return;e.preventDefault();if(drag.closest('.panel')===t.closest('.panel'))place(drag,t);drag=null});
+panels.addEventListener('click',e=>{
+  const ch=e.target.closest('.chip');
+  if(ch){if(sel===ch){ch.classList.remove('sel');sel=null}else{if(sel)sel.classList.remove('sel');sel=ch;ch.classList.add('sel')}return}
+  const t=e.target.closest(T);
+  if(t&&sel&&sel.closest('.panel')===t.closest('.panel'))place(sel,t);
+});
+build();
+</script>
+</body>
+</html>
